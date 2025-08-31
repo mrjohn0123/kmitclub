@@ -117,20 +117,7 @@ const CoordinatorPolls = () => {
     }
   }
 
-  const vote = async (pollId, optionId) => {
-    try {
-      await axios.post(
-        `http://localhost:5000/api/polls/${pollId}/vote`,
-        { optionId },
-        { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } }
-      )
-      alert("Vote submitted successfully!")
-      // Refresh polls to show updated results
-      await load()
-    } catch (e) {
-      alert(e.response?.data?.message || "Failed to submit vote")
-    }
-  }
+
 
   const getTotalVotes = (poll) => {
     return poll.options?.reduce((total, option) => total + (option.votes || 0), 0) || 0
@@ -222,7 +209,10 @@ const CoordinatorPolls = () => {
       </div>
 
       <div className={styles.section}>
-        <h2>Club Polls - Vote & View Results</h2>
+        <h2>Club Polls - View Results</h2>
+        <p style={{ color: '#666', marginBottom: '20px' }}>
+          As a coordinator, you can view poll results but cannot vote. Only club members can vote in polls.
+        </p>
         <div className={styles.eventsList}>
           {polls.map((poll) => {
             const totalVotes = getTotalVotes(poll)
@@ -260,20 +250,17 @@ const CoordinatorPolls = () => {
                         }}>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
                             <span style={{ fontWeight: '500', fontSize: '14px' }}>{option.text}</span>
-                            <button
-                              onClick={() => vote(poll._id, option._id)}
-                              style={{
-                                backgroundColor: '#007bff',
-                                color: 'white',
-                                border: 'none',
-                                padding: '6px 12px',
-                                borderRadius: '4px',
-                                cursor: 'pointer',
-                                fontSize: '12px'
-                              }}
-                            >
-                              Vote
-                            </button>
+                            <span style={{
+                              backgroundColor: '#6c757d',
+                              color: 'white',
+                              border: 'none',
+                              padding: '6px 12px',
+                              borderRadius: '4px',
+                              fontSize: '12px',
+                              opacity: '0.7'
+                            }}>
+                              View Only
+                            </span>
                           </div>
                           
                           <div style={{ marginBottom: '8px' }}>

@@ -3,6 +3,12 @@ const clubController = require('../controllers/clubController');
 const router = express.Router();
 const { auth, requireRole } = require('../utils/middleware');
 
+// POST /api/clubs - Create a new club (admin only)
+router.post('/', auth, requireRole('admin'), clubController.createClub);
+
+// PUT /api/clubs/:id - Update a club (admin only)
+router.put('/:id', auth, requireRole('admin'), clubController.updateClub);
+
 // GET /api/clubs - Fetch all clubs with full details
 router.get('/', (req, res) => {
   const Club = require('../models/Club');

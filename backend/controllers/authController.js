@@ -7,18 +7,25 @@ const generateToken = (userId, role) => {
   return jwt.sign({ userId, role }, secret, { expiresIn: '7d' });
 };
 
-// Register new user (only for students)
+// Register new user (supports different roles)
 exports.register = async (req, res) => {
   try {
-    const { name, email, password, rollNo } = req.body;
+    const { name, email, password, rollNo, role = 'student' } = req.body;
     
     // Debug logging
-    console.log('Registration request received:', { name, email, rollNo });
+    console.log('Registration request received:', { name, email, rollNo, role });
     
     // Validate required fields
     if (!name || !email || !password || !rollNo) {
       return res.status(400).json({ 
         message: 'All fields are required: name, email, password, rollNo' 
+      });
+    }
+
+    // Validate role
+    if (!['student', 'coordinator', 'admin'].includes(role)) {
+      return res.status(400).json({ 
+        message: 'Invalid role. Must be student, coordinator, or admin' 
       });
     }
 
@@ -33,30 +40,30 @@ exports.register = async (req, res) => {
       });
     }
 
-    // Create new student user
+    // Create new user
     const userData = {
       name,
       email,
       rollNo,
       passwordHash: password, // Will be hashed by pre-save hook
-      role: 'student'
+      role
     };
 
     const user = new User(userData);
     await user.save();
 
     // Generate token
-    const token = generateToken(user._id, 'student');
+    const token = generateToken(user._id, role);
 
     const responseData = {
-      message: 'Student registered successfully',
+      message: `${role.charAt(0).toUpperCase() + role.slice(1)} registered successfully`,
       token,
       user: {
         id: user._id,
         name: user.name,
         email: user.email,
         rollNo: user.rollNo,
-        role: 'student',
+        role,
         year: user.year,
         branch: user.branch,
         coordinatingClub: user.coordinatingClub,
@@ -64,7 +71,7 @@ exports.register = async (req, res) => {
       }
     };
     
-    console.log('Student registered successfully:', user._id);
+    console.log(`${role} registered successfully:`, user._id);
     res.status(201).json(responseData);
   } catch (err) {
     console.error('Registration error:', err);

@@ -60,11 +60,12 @@ exports.createPoll = async (req, res) => {
   }
 };
 
-// List active polls for student (club scope for their clubs, or global/all/coordinators when applicable)
+// List active polls for user (students can vote, coordinators can view their club's polls)
 exports.getActivePollsForUser = async (req, res) => {
   try {
     const role = req.user.role;
     let filter = { status: 'active' };
+    
     if (role === 'student') {
       // Show all-club polls and specific club polls for any club the student is in
       const userClubIds = req.user.joinedClubs ? req.user.joinedClubs.map(club => club._id) : [];
@@ -73,10 +74,21 @@ exports.getActivePollsForUser = async (req, res) => {
         { scope: 'club', clubId: { $in: userClubIds } },
       ];
     } else if (role === 'coordinator') {
-      filter.$or = [ { scope: 'all' }, { scope: 'coordinators' } ];
+      // Coordinators can see their club's polls for viewing results
+      const coordinatorClubId = req.user.coordinatingClub;
+      if (coordinatorClubId) {
+        filter.$or = [
+          { scope: 'all' },
+          { scope: 'coordinators' },
+          { scope: 'club', clubId: coordinatorClubId }
+        ];
+      } else {
+        filter.$or = [ { scope: 'all' }, { scope: 'coordinators' } ];
+      }
     } else if (role === 'admin') {
       // admins can see all active
     }
+    
     const polls = await Poll.find(filter).populate('clubId', 'name');
     res.json(polls);
   } catch (err) {
@@ -88,9 +100,25 @@ exports.getActivePollsForUser = async (req, res) => {
 exports.vote = async (req, res) => {
   try {
     const { optionId } = req.body;
+    
+    // Only students can vote
+    if (req.user.role !== 'student') {
+      return res.status(403).json({ message: 'Only students can vote in polls' });
+    }
+    
     const poll = await Poll.findById(req.params.pollId);
     if (!poll) return res.status(404).json({ message: 'Poll not found' });
     if (poll.status !== 'active') return res.status(400).json({ message: 'Poll is not active' });
+
+    // Check if student is a member of the club that the poll belongs to
+    if (poll.scope === 'club' && poll.clubId) {
+      const User = require('../models/User');
+      const user = await User.findById(req.user.userId);
+      const isMember = user.clubs.some(clubId => String(clubId) === String(poll.clubId));
+      if (!isMember) {
+        return res.status(403).json({ message: 'You can only vote in polls for clubs you are a member of' });
+      }
+    }
 
     // Prevent double vote by same user
     const already = poll.votes.find(v => String(v.userId) === req.user.userId);

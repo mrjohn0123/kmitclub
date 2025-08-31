@@ -2,6 +2,73 @@ const Club = require('../models/Club');
 const User = require('../models/User');
 const EnrollmentRequest = require('../models/EnrollmentRequest');
 
+// Create a new club (admin only)
+exports.createClub = async (req, res) => {
+  try {
+    const { name, description, category, logoUrl } = req.body;
+    
+    if (!name || !description) {
+      return res.status(400).json({ message: 'Name and description are required' });
+    }
+
+    // Generate a unique club key
+    const clubKey = `CLUB_${Date.now()}_${Math.random().toString(36).substr(2, 9).toUpperCase()}`;
+
+    const club = await Club.create({
+      name,
+      description,
+      category: category || 'General',
+      logoUrl: logoUrl || '',
+      clubKey,
+      enrollmentOpen: true,
+      coordinators: []
+    });
+
+    res.status(201).json(club);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
+
+// Update a club (admin only)
+exports.updateClub = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, description, category, logoUrl, coordinators } = req.body;
+    
+    const updateData = {};
+    if (name) updateData.name = name;
+    if (description) updateData.description = description;
+    if (category) updateData.category = category;
+    if (logoUrl !== undefined) updateData.logoUrl = logoUrl;
+    
+    // Handle coordinator assignment
+    if (coordinators && Array.isArray(coordinators)) {
+      // Find users by roll numbers and get their IDs
+      const coordinatorUsers = await User.find({ rollNo: { $in: coordinators } });
+      const coordinatorIds = coordinatorUsers.map(user => user._id);
+      
+      // Update the club with new coordinators
+      updateData.coordinators = coordinatorIds;
+      
+      // Update the coordinatingClub field for these users
+      await User.updateMany(
+        { _id: { $in: coordinatorIds } },
+        { coordinatingClub: id }
+      );
+    }
+
+    const club = await Club.findByIdAndUpdate(id, updateData, { new: true });
+    if (!club) {
+      return res.status(404).json({ message: 'Club not found' });
+    }
+
+    res.json(club);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
+
 exports.getClubById = async (req, res) => {
   try {
     const club = await Club.findById(req.params.id);

@@ -3,8 +3,7 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 require('dotenv').config();
-require('dotenv').config({ path: __dirname + '/../.env' });
-
+require('dotenv').config({ path: __dirname + '/../.env' }
 const seedAdmin = async () => {
   try {
     // Connect to MongoDB Atlas using env variable
