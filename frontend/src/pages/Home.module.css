@@ -1,0 +1,316 @@
+.home {
+  min-height: 100vh;
+}
+
+.hero {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 100px 0;
+  min-height: 80vh;
+  display: flex;
+  align-items: center;
+}
+
+.heroContent {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4rem;
+  align-items: center;
+}
+
+.heroText h1 {
+  font-size: 3rem;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+  line-height: 1.2;
+}
+
+.heroText p {
+  font-size: 1.2rem;
+  line-height: 1.6;
+  margin-bottom: 2rem;
+  opacity: 0.9;
+}
+
+.heroButtons {
+  display: flex;
+  gap: 1rem;
+}
+
+.ctaButton {
+  background: white;
+  color: #667eea;
+  padding: 15px 30px;
+  border-radius: 30px;
+  text-decoration: none;
+  font-weight: 600;
+  transition: transform 0.3s ease;
+}
+
+.ctaButton:hover {
+  transform: translateY(-2px);
+}
+
+.secondaryButton {
+  background: transparent;
+  color: white;
+  padding: 15px 30px;
+  border: 2px solid white;
+  border-radius: 30px;
+  text-decoration: none;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.secondaryButton:hover {
+  background: white;
+  color: #667eea;
+}
+
+.heroImage {
+  text-align: center;
+}
+
+.heroImage img {
+  width: 300px;
+  height: 300px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 5px solid rgba(255, 255, 255, 0.3);
+}
+
+.sliderSection {
+  padding: 40px 0 0 0;
+  background: #fff;
+  display: flex;
+  justify-content: center;
+}
+
+.sliderWrapper {
+  width: 1200px;
+  height: 400px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  max-width: 98vw;
+}
+
+@media (max-width: 1300px) {
+  .sliderWrapper {
+    width: 98vw;
+    height: 320px;
+  }
+}
+@media (max-width: 900px) {
+  .sliderWrapper {
+    width: 98vw;
+    height: 200px;
+  }
+}
+.sliderImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 20px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.10);
+  position: absolute;
+  left: 0;
+  top: 0;
+  opacity: 0;
+  transition: opacity 0.7s;
+  z-index: 1;
+}
+
+.sliderImage.active {
+  opacity: 1;
+  z-index: 2;
+}
+
+.sliderArrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(0,0,0,0.35);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  font-size: 2rem;
+  cursor: pointer;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, box-shadow 0.2s;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+.sliderArrow:hover {
+  background: rgba(0,0,0,0.55);
+}
+.sliderArrow.left {
+  left: 18px;
+}
+.sliderArrow.right {
+  right: 18px;
+}
+
+/* Smaller, compact club cards */
+.clubCardSmall {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  padding: 1.2rem 0.5rem 0.8rem 0.5rem;
+  text-align: center;
+  width: 170px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: transform 0.15s;
+}
+.clubCardSmall:hover {
+  transform: translateY(-3px) scale(1.03);
+}
+.clubLogoSmall {
+  width: 90px;
+  height: 90px;
+  object-fit: contain;
+  border-radius: 10px;
+  margin-bottom: 0.7rem;
+  background: #f0f0f0;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+.clubName {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #2c3e50;
+  margin-top: 0.2rem;
+  word-break: break-word;
+}
+.clubsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 2rem;
+  justify-items: center;
+}
+
+.loading {
+  text-align: center;
+  padding: 2rem;
+  font-size: 1.2rem;
+  color: #666;
+}
+
+/* Remove/override previous carousel and large club card styles */
+.carouselSection, .carousel, .carouselImageWrapper, .carouselImage {
+  display: none !important;
+}
+
+.aboutSection {
+  padding: 80px 0;
+}
+
+.aboutContent {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 4rem;
+  align-items: center;
+}
+
+.aboutText h2 {
+  font-size: 2.5rem;
+  color: #2c3e50;
+  margin-bottom: 1.5rem;
+}
+
+.aboutText p {
+  font-size: 1.1rem;
+  line-height: 1.7;
+  color: #7f8c8d;
+  margin-bottom: 2rem;
+}
+
+.aboutText ul {
+  list-style: none;
+  padding: 0;
+}
+
+.aboutText ul li {
+  padding: 10px 0;
+  border-bottom: 1px solid #ecf0f1;
+  color: #34495e;
+  position: relative;
+  padding-left: 20px;
+}
+
+.aboutText ul li:before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  color: #27ae60;
+  font-weight: bold;
+}
+
+.aboutStats {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.stat {
+  text-align: center;
+  padding: 2rem;
+  background: white;
+  border-radius: 15px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.stat h3 {
+  font-size: 3rem;
+  color: #667eea;
+  margin-bottom: 0.5rem;
+}
+
+.stat p {
+  color: #7f8c8d;
+  font-weight: 500;
+}
+
+@media (max-width: 768px) {
+  .heroContent {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    text-align: center;
+  }
+
+  .heroText h1 {
+    font-size: 2rem;
+  }
+
+  .heroImage img {
+    width: 200px;
+    height: 200px;
+  }
+
+  .aboutContent {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .eventsScroll {
+    gap: 1rem;
+  }
+
+  .eventImage {
+    min-width: 250px;
+  }
+
+  .clubsGrid {
+    grid-template-columns: 1fr;
+  }
+}
