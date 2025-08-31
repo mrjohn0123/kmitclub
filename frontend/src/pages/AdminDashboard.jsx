@@ -88,11 +88,19 @@ const AdminDashboard = () => {
           </div>
         </Link>
 
+        <Link to="/admin/create-club" className={styles.functionCard}>
+          <div className={styles.cardContent}>
+            <h3>Create Club</h3>
+            <p>Add new clubs to the system</p>
+            <div className={styles.cardIcon}>🏢</div>
+          </div>
+        </Link>
+
         <Link to="/admin/clubs" className={styles.functionCard}>
           <div className={styles.cardContent}>
             <h3>Club Management</h3>
             <p>Create, edit, and manage all clubs</p>
-            <div className={styles.cardIcon}>🏢</div>
+            <div className={styles.cardIcon}>⚙️</div>
           </div>
         </Link>
 

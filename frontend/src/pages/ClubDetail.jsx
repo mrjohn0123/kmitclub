@@ -16,11 +16,15 @@ const ClubDetail = () => {
   const [enrollOpen, setEnrollOpen] = useState(false)
   const [enrollForm, setEnrollForm] = useState({ year: "", branch: "" })
   const [enrollMsg, setEnrollMsg] = useState("")
+  const [enrollmentStatus, setEnrollmentStatus] = useState(null)
 
   useEffect(() => {
     fetchClub()
+    if (user && user.role === 'student') {
+      fetchEnrollmentStatus()
+    }
     // eslint-disable-next-line
-  }, [id])
+  }, [id, user])
 
   const fetchClub = async () => {
     try {
@@ -30,6 +34,17 @@ const ClubDetail = () => {
       setError("Failed to load club details")
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchEnrollmentStatus = async () => {
+    try {
+      const response = await axios.get(`http://localhost:5000/api/clubs/${id}/enrollment-status`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      })
+      setEnrollmentStatus(response.data)
+    } catch (error) {
+      console.error('Failed to fetch enrollment status:', error)
     }
   }
 
@@ -47,21 +62,14 @@ const ClubDetail = () => {
       }, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       })
-      setEnrollMsg('Enrolled successfully!')
-      setEnrollForm({ year: "", branch: "" })
-      setEnrollOpen(false)
       
-      // Update the user context with the new clubs data
-      if (res.data.user) {
-        updateUser({
-          joinedClubs: res.data.user.joinedClubs,
-          year: res.data.user.year,
-          branch: res.data.user.branch
-        })
+      if (res.data.status === 'pending') {
+        setEnrollMsg('Request sent')
+        setEnrollForm({ year: "", branch: "" })
+        setEnrollOpen(false)
+        // Refresh enrollment status
+        fetchEnrollmentStatus()
       }
-      
-      // Refresh the page to show updated enrollment status
-      window.location.reload()
     } catch (err) {
       setEnrollMsg(err.response?.data?.message || 'Enrollment failed')
     }
@@ -72,7 +80,85 @@ const ClubDetail = () => {
 
   const isStudent = user && user.role === 'student'
   const enrollmentEnabled = club?.enrollmentOpen
-  const isAlreadyEnrolled = user && user.joinedClubs && user.joinedClubs.some(club => club._id === id)
+  const isAlreadyEnrolled = enrollmentStatus?.status === 'enrolled'
+
+  const renderEnrollmentStatus = () => {
+    if (!isStudent) {
+      return <p className={styles.note}>Login as student to enroll.</p>
+    }
+
+    if (isAlreadyEnrolled) {
+      return (
+        <div className={styles.enrollmentStatus}>
+          <p className={styles.success}>✅ You are enrolled for this club!</p>
+        </div>
+      )
+    }
+
+    if (enrollmentStatus?.status === 'pending') {
+      return (
+        <div className={styles.enrollmentStatus}>
+          <p className={styles.pending}>⏳ Request sent</p>
+        </div>
+      )
+    }
+
+    if (enrollmentStatus?.status === 'rejected') {
+      return (
+        <div className={styles.enrollmentStatus}>
+          <p className={styles.rejected}>❌ You are rejected</p>
+        </div>
+      )
+    }
+
+    if (!enrollmentEnabled) {
+      return <p className={styles.note}>Enrollment is currently closed for this club.</p>
+    }
+
+    return (
+      <>
+        <p>Status: Open</p>
+        <button
+          className={styles.enrollBtn}
+          onClick={() => setEnrollOpen(!enrollOpen)}
+        >
+          {enrollOpen ? 'Hide Form' : 'Enroll in Club'}
+        </button>
+        {enrollOpen && (
+          <form onSubmit={submitEnrollment} className={styles.enrollForm}>
+            <div className={styles.formRow}>
+              <div className={styles.formGroup}>
+                <label>Year</label>
+                <input
+                  type="number"
+                  min="1"
+                  max="4"
+                  name="year"
+                  value={enrollForm.year}
+                  onChange={handleEnrollChange}
+                  className={styles.input}
+                  placeholder="Enter your year"
+                />
+              </div>
+              <div className={styles.formGroup}>
+                <label>Branch</label>
+                <input
+                  type="text"
+                  name="branch"
+                  value={enrollForm.branch}
+                  onChange={handleEnrollChange}
+                  className={styles.input}
+                  placeholder="Enter your branch"
+                />
+              </div>
+            </div>
+            <button type="submit" className={styles.submitBtn}>Submit Enrollment</button>
+            {enrollMsg && <div className={styles.note}>{enrollMsg}</div>}
+          </form>
+        )}
+      </>
+    )
+  }
 
   return (
     <div className={styles.clubDetail}>
@@ -91,61 +177,7 @@ const ClubDetail = () => {
         {/* Enrollment section */}
         <div className={styles.section}>
           <h2>Enrollment</h2>
-          {!isStudent && (
-            <p className={styles.note}>Login as student to enroll.</p>
-          )}
-          {isStudent && (
-            <>
-              {isAlreadyEnrolled ? (
-                <div className={styles.enrollmentStatus}>
-                  <p className={styles.success}>✅ You are already enrolled in this club!</p>
-                </div>
-              ) : (
-                <>
-                  <p>Status: {enrollmentEnabled ? 'Open' : 'Closed'}</p>
-                  <button
-                    className={styles.enrollBtn}
-                    disabled={!enrollmentEnabled}
-                    onClick={() => setEnrollOpen(!enrollOpen)}
-                  >
-                    {enrollOpen ? 'Hide Form' : 'Enroll in Club'}
-                  </button>
-                  {enrollOpen && enrollmentEnabled && (
-                    <form onSubmit={submitEnrollment} className={styles.enrollForm}>
-                      <div className={styles.formRow}>
-                        <div className={styles.formGroup}>
-                          <label>Year</label>
-                          <input
-                            type="number"
-                            min="1"
-                            max="4"
-                            name="year"
-                            value={enrollForm.year}
-                            onChange={handleEnrollChange}
-                            className={styles.input}
-                            placeholder="Enter your year"
-                          />
-                        </div>
-                        <div className={styles.formGroup}>
-                          <label>Branch</label>
-                          <input
-                            type="text"
-                            name="branch"
-                            value={enrollForm.branch}
-                            onChange={handleEnrollChange}
-                            className={styles.input}
-                            placeholder="Enter your branch"
-                          />
-                        </div>
-                      </div>
-                      <button type="submit" className={styles.submitBtn}>Submit Enrollment</button>
-                      {enrollMsg && <div className={styles.note}>{enrollMsg}</div>}
-                    </form>
-                  )}
-                </>
-              )}
-            </>
-          )}
+          {renderEnrollmentStatus()}
         </div>
 
         {/* Team Heads */}

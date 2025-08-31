@@ -4,12 +4,14 @@ import { useState, useEffect } from "react"
 import { useAuth } from "../context/AuthContext"
 import axios from "axios"
 import styles from "./Dashboard.module.css"
+import { useNavigate } from "react-router-dom"
 
 const AdminClubs = () => {
   const { user } = useAuth()
   const [clubs, setClubs] = useState([])
   const [loading, setLoading] = useState(true)
   const [updating, setUpdating] = useState({})
+  const navigate = useNavigate()
 
   useEffect(() => {
     fetchClubs()
@@ -60,7 +62,15 @@ const AdminClubs = () => {
       </div>
 
       <div className={styles.section}>
-        <h2>Club Enrollment Control</h2>
+        <div className={styles.sectionHeader}>
+          <h2>Club Enrollment Control</h2>
+          <button
+            onClick={() => navigate('/admin/create-club')}
+            className={styles.primaryButton}
+          >
+            + Create New Club
+          </button>
+        </div>
         <p>Toggle enrollment status for each club. When enabled, students can enroll in the club.</p>
         
         <div className={styles.clubsGrid}>

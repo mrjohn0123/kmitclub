@@ -11,9 +11,11 @@ import ClubDetail from "./pages/ClubDetail"
 import StudentDashboard from "./pages/StudentDashboard"
 import CoordinatorDashboard from "./pages/CoordinatorDashboard"
 import CoordinatorMembers from "./pages/CoordinatorMembers"
+import CoordinatorEnrollmentRequests from "./pages/CoordinatorEnrollmentRequests"
 import AdminDashboard from "./pages/AdminDashboard"
 import AdminClubs from "./pages/AdminClubs"
 import CreateCoordinator from "./pages/CreateCoordinator"
+import CreateClub from "./pages/CreateClub"
 import ProtectedRoute from "./components/ProtectedRoute"
 import RoleSelect from "./pages/RoleSelect"
 import StudentFeedback from "./pages/StudentFeedback"
@@ -70,6 +72,7 @@ function App() {
                       <Route path="events" element={<CoordinatorEvents />} />
                       <Route path="feedback" element={<CoordinatorFeedback />} />
                       <Route path="polls" element={<CoordinatorPolls />} />
+                      <Route path="enrollment-requests/:id" element={<CoordinatorEnrollmentRequests />} />
                     </Routes>
                   </ProtectedRoute>
                 }

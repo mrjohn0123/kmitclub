@@ -28,6 +28,11 @@ router.put('/requests/:requestId', auth, requireRole(['coordinator']), clubContr
 router.post('/:clubId/toggle-enrollment', auth, clubController.toggleEnrollment);
 router.post('/:clubId/enroll', auth, clubController.enrollInClub);
 
+// Enrollment request routes
+router.get('/:clubId/enrollment-requests', auth, requireRole(['coordinator']), clubController.getEnrollmentRequests);
+router.put('/enrollment-requests/:requestId', auth, requireRole(['coordinator']), clubController.handleEnrollmentRequest);
+router.get('/:clubId/enrollment-status', auth, requireRole(['student']), clubController.getEnrollmentStatus);
+
 // Admin routes for club keys
 router.get('/admin/club-keys', auth, requireRole('admin'), clubController.getAllClubKeys);
 router.put('/admin/update-club-key/:clubId', auth, requireRole('admin'), clubController.updateClubKey);

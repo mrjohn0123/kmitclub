@@ -1,5 +1,6 @@
 const Club = require('../models/Club');
 const User = require('../models/User');
+const EnrollmentRequest = require('../models/EnrollmentRequest');
 
 exports.getClubById = async (req, res) => {
   try {
@@ -79,7 +80,7 @@ exports.toggleEnrollment = async (req, res) => {
   }
 };
 
-// Enroll current user (student) into a club, supply year/branch if missing
+// Enroll current user (student) into a club, now creates enrollment request
 exports.enrollInClub = async (req, res) => {
   try {
     const { clubId } = req.params;
@@ -101,28 +102,186 @@ exports.enrollInClub = async (req, res) => {
       return res.status(400).json({ message: 'You are already enrolled in this club' });
     }
 
+    // Check if there's already a pending request
+    const existingRequest = await EnrollmentRequest.findOne({
+      student: userId,
+      club: clubId,
+      status: 'pending'
+    });
+
+    if (existingRequest) {
+      return res.status(400).json({ message: 'You already have a pending enrollment request for this club' });
+    }
+
     // Update year/branch if provided
     if (year !== undefined) user.year = year;
     if (branch !== undefined) user.branch = branch;
-
-    // Add club to user's clubs array
-    user.clubs.push(clubId);
     await user.save();
 
-    // Fetch updated user with populated clubs
-    const updatedUser = await User.findById(userId).populate('clubs');
+    // Create enrollment request
+    const enrollmentRequest = new EnrollmentRequest({
+      student: userId,
+      club: clubId,
+      status: 'pending'
+    });
+
+    await enrollmentRequest.save();
 
     res.json({ 
-      message: 'Enrolled successfully', 
-      user: { 
-        id: updatedUser._id, 
-        year: updatedUser.year, 
-        branch: updatedUser.branch, 
-        joinedClubs: updatedUser.clubs 
-      } 
+      message: 'Enrollment request sent successfully', 
+      requestId: enrollmentRequest._id,
+      status: 'pending'
     });
   } catch (err) {
-    console.error('Enrollment error:', err);
+    console.error('Enrollment request error:', err);
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
+
+// Get enrollment requests for a club (coordinator only)
+exports.getEnrollmentRequests = async (req, res) => {
+  try {
+    const { clubId } = req.params;
+    const { userId, role } = req.user;
+
+    if (role !== 'coordinator') {
+      return res.status(403).json({ message: 'Only coordinators can view enrollment requests' });
+    }
+
+    const club = await Club.findById(clubId);
+    if (!club) {
+      return res.status(404).json({ message: 'Club not found' });
+    }
+
+    // Check if user is coordinator of this club
+    const isCoordinator = club.coordinators.some((id) => String(id) === String(userId));
+    if (!isCoordinator) {
+      return res.status(403).json({ message: 'You are not a coordinator of this club' });
+    }
+
+    const requests = await EnrollmentRequest.find({ club: clubId })
+      .populate('student', 'name email rollNo branch year')
+      .sort({ submittedAt: -1 });
+
+    res.json(requests);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
+
+// Handle enrollment request (approve/reject)
+exports.handleEnrollmentRequest = async (req, res) => {
+  try {
+    const { requestId } = req.params;
+    const { action, message } = req.body;
+    const { userId, role } = req.user;
+
+    if (!['approve', 'reject'].includes(action)) {
+      return res.status(400).json({ message: 'Invalid action. Use "approve" or "reject"' });
+    }
+
+    const enrollmentRequest = await EnrollmentRequest.findById(requestId)
+      .populate('student')
+      .populate('club');
+
+    if (!enrollmentRequest) {
+      return res.status(404).json({ message: 'Enrollment request not found' });
+    }
+
+    if (role !== 'coordinator') {
+      return res.status(403).json({ message: 'Only coordinators can handle enrollment requests' });
+    }
+
+    // Check if user is coordinator of this club
+    const isCoordinator = enrollmentRequest.club.coordinators.some((id) => String(id) === String(userId));
+    if (!isCoordinator) {
+      return res.status(403).json({ message: 'You are not a coordinator of this club' });
+    }
+
+    if (enrollmentRequest.status !== 'pending') {
+      return res.status(400).json({ message: 'This request has already been processed' });
+    }
+
+    // Update request status
+    enrollmentRequest.status = action === 'approve' ? 'accepted' : 'rejected';
+    enrollmentRequest.message = message || '';
+    enrollmentRequest.reviewedAt = new Date();
+    enrollmentRequest.reviewedBy = userId;
+
+    if (action === 'approve') {
+      // Add student to club
+      const student = enrollmentRequest.student;
+      student.clubs.push(enrollmentRequest.club._id);
+      await student.save();
+    }
+
+    await enrollmentRequest.save();
+
+    res.json({ 
+      message: `Enrollment request ${action}d successfully`,
+      status: enrollmentRequest.status
+    });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+};
+
+// Get student's enrollment status for a club
+exports.getEnrollmentStatus = async (req, res) => {
+  try {
+    const { clubId } = req.params;
+    const { userId, role } = req.user;
+
+    if (role !== 'student') {
+      return res.status(403).json({ message: 'Only students can check enrollment status' });
+    }
+
+    // Check if already enrolled
+    const user = await User.findById(userId);
+    const isEnrolled = user.clubs.some((c) => String(c) === String(clubId));
+
+    if (isEnrolled) {
+      return res.json({ 
+        status: 'enrolled',
+        message: 'You are enrolled for this club'
+      });
+    }
+
+    // Check for pending request
+    const pendingRequest = await EnrollmentRequest.findOne({
+      student: userId,
+      club: clubId,
+      status: 'pending'
+    });
+
+    if (pendingRequest) {
+      return res.json({ 
+        status: 'pending',
+        message: 'Request sent'
+      });
+    }
+
+    // Check for rejected request
+    const rejectedRequest = await EnrollmentRequest.findOne({
+      student: userId,
+      club: clubId,
+      status: 'rejected'
+    });
+
+    if (rejectedRequest) {
+      return res.json({ 
+        status: 'rejected',
+        message: 'You are rejected'
+      });
+    }
+
+    // No request found
+    return res.json({ 
+      status: 'none',
+      message: 'No enrollment request found'
+    });
+
+  } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
   }
 };
